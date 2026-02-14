@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/auth-options";
-import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { addDays } from "date-fns";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-11-20.acacia" as any,
-});
 
 export async function POST(req: Request) {
     try {
