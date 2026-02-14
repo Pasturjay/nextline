@@ -15,9 +15,14 @@ export async function generateMetadata(
     parent: ResolvingMetadata
 ): Promise<Metadata> {
     const { id } = await params;
-    const job = await prisma.job.findUnique({
-        where: { id },
-    });
+    let job = null;
+    try {
+        job = await prisma.job.findUnique({
+            where: { id },
+        });
+    } catch (e) {
+        console.error("Metadata fetch error:", e);
+    }
 
     if (!job) {
         return {
@@ -33,9 +38,14 @@ export async function generateMetadata(
 
 export default async function JobDetailPage({ params }: Props) {
     const { id } = await params;
-    const job = await prisma.job.findUnique({
-        where: { id },
-    });
+    let job = null;
+    try {
+        job = await prisma.job.findUnique({
+            where: { id },
+        });
+    } catch (e) {
+        console.error("Job detail fetch error:", e);
+    }
 
     if (!job || job.status !== "OPEN") {
         notFound();

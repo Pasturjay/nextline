@@ -11,10 +11,15 @@ export const metadata: Metadata = {
 };
 
 export default async function CareersPage() {
-    const jobs = await prisma.job.findMany({
-        where: { status: "OPEN" },
-        orderBy: { postedAt: "desc" },
-    });
+    let jobs = [];
+    try {
+        jobs = await prisma.job.findMany({
+            where: { status: "OPEN" },
+            orderBy: { postedAt: "desc" },
+        });
+    } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

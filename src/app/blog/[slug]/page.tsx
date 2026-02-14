@@ -15,9 +15,14 @@ export async function generateMetadata(
     parent: ResolvingMetadata
 ): Promise<Metadata> {
     const { slug } = await params;
-    const post = await prisma.blogPost.findUnique({
-        where: { slug },
-    });
+    let post = null;
+    try {
+        post = await prisma.blogPost.findUnique({
+            where: { slug },
+        });
+    } catch (e) {
+        console.error("Metadata fetch error:", e);
+    }
 
     if (!post) {
         return {
@@ -39,9 +44,14 @@ export async function generateMetadata(
 
 export default async function BlogPostPage({ params }: Props) {
     const { slug } = await params;
-    const post = await prisma.blogPost.findUnique({
-        where: { slug },
-    });
+    let post = null;
+    try {
+        post = await prisma.blogPost.findUnique({
+            where: { slug },
+        });
+    } catch (e) {
+        console.error("Blog post fetch error:", e);
+    }
 
     if (!post || post.status !== "PUBLISHED") {
         notFound();
