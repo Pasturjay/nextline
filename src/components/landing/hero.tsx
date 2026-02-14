@@ -8,7 +8,7 @@ import { FloatingIcons } from "@/components/landing/floating-icons";
 
 export function LandingHero() {
     return (
-        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 py-12 md:py-16">
+        <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 pt-20 pb-12 md:pb-16">
             {/* Animated Background Pattern */}
             <div className="absolute inset-0 opacity-20">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.1),transparent_50%)]" />
@@ -44,7 +44,7 @@ export function LandingHero() {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-extrabold leading-tight">
                             One Platform for
                             <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-pink-200 to-white">

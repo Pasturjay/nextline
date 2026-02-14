@@ -6,7 +6,7 @@ import PhoneCallAnimation from "./phone-call-animation";
 
 const LiveDemoScreens = () => {
     return (
-        <section id="demo" className="py-24 relative overflow-hidden">
+        <section id="demo" className="py-16 relative overflow-hidden">
             {/* Background effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background opacity-50" />
 
