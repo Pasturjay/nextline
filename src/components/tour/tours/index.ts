@@ -1,4 +1,12 @@
-import { Step } from 'react-joyride';
+// Step interface defined locally to avoid react-joyride dependency
+export interface Step {
+    target: string | HTMLElement;
+    content: React.ReactNode;
+    disableBeacon?: boolean;
+    placement?: string | 'top' | 'bottom' | 'left' | 'right' | 'auto' | 'center';
+    title?: React.ReactNode;
+    [key: string]: any;
+}
 
 export const dashboardTour: Step[] = [
     {
