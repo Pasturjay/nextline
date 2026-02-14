@@ -9,6 +9,8 @@ import { Loader2, Plus, Edit, Trash2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { ShieldAlert } from "lucide-react";
 
 interface BlogPost {
     id: string;
@@ -20,6 +22,7 @@ interface BlogPost {
 }
 
 export default function BlogsPage() {
+    const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const router = useRouter();

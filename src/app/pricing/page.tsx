@@ -32,6 +32,7 @@ import { useCurrency } from "@/providers/currency-provider";
 
 export default function PricingPage() {
     const { format, isLoading } = useCurrency();
+    const [isAnnual, setIsAnnual] = useState(false);
 
     const pricing = {
         starter: isAnnual ? 4.5 : 5.5,
