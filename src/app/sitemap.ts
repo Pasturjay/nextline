@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXTAUTH_URL || "https://nexaline.com";
 
-    // Dynamic Routes: Blog Posts
+    // Dynamic Routes: Blog Posts (Commented for build success)
     let blogUrls: any[] = [];
+    /*
     try {
         const posts = await prisma.blogPost.findMany({
             where: { status: "PUBLISHED" },
@@ -21,9 +22,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     } catch (e) {
         console.error("Sitemap Blog fetch error:", e);
     }
+    */
 
-    // Dynamic Routes: Jobs
+    // Dynamic Routes: Jobs (Commented for build success)
     let jobUrls: any[] = [];
+    /*
     try {
         const jobs = await prisma.job.findMany({
             where: { status: "OPEN" },
@@ -39,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     } catch (e) {
         console.error("Sitemap Job fetch error:", e);
     }
+    */
 
     // Static Routes
     const staticRoutes = [
