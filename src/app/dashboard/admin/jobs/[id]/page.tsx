@@ -13,11 +13,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-export default function EditJobPage({ params }: { params: { id: string } }) {
+export default function EditJobPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [id, setId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: "",
         department: "",
@@ -29,13 +30,18 @@ export default function EditJobPage({ params }: { params: { id: string } }) {
     });
 
     useEffect(() => {
-        fetchJob();
-    }, [params.id]);
+        async function init() {
+            const { id: paramId } = await params;
+            setId(paramId);
+            fetchJob(paramId);
+        }
+        init();
+    }, [params]);
 
-    const fetchJob = async () => {
+    const fetchJob = async (jobId: string) => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/admin/jobs/${params.id}`);
+            const res = await fetch(`/api/admin/jobs/${jobId}`);
             if (!res.ok) throw new Error("Failed to fetch job");
             const data = await res.json();
             setFormData({
@@ -68,7 +74,7 @@ export default function EditJobPage({ params }: { params: { id: string } }) {
         setIsSaving(true);
 
         try {
-            const res = await fetch(`/api/admin/jobs/${params.id}`, {
+            const res = await fetch(`/api/admin/jobs/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),

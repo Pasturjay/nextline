@@ -7,15 +7,16 @@ import { ArrowLeft, MapPin, Building2, Clock, Share2 } from "lucide-react";
 import { notFound } from "next/navigation";
 
 interface Props {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata(
     { params }: Props,
     parent: ResolvingMetadata
 ): Promise<Metadata> {
+    const { id } = await params;
     const job = await prisma.job.findUnique({
-        where: { id: params.id },
+        where: { id },
     });
 
     if (!job) {
@@ -31,8 +32,9 @@ export async function generateMetadata(
 }
 
 export default async function JobDetailPage({ params }: Props) {
+    const { id } = await params;
     const job = await prisma.job.findUnique({
-        where: { id: params.id },
+        where: { id },
     });
 
     if (!job || job.status !== "OPEN") {

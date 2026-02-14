@@ -17,9 +17,10 @@ const jobUpdateSchema = z.object({
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -28,7 +29,7 @@ export async function GET(
         }
 
         const job = await prisma.job.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!job) {
@@ -47,9 +48,10 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -62,13 +64,13 @@ export async function PUT(
 
         if (!validation.success) {
             return NextResponse.json(
-                { error: validation.error.errors },
+                { error: validation.error.format() },
                 { status: 400 }
             );
         }
 
         const job = await prisma.job.update({
-            where: { id: params.id },
+            where: { id },
             data: validation.data,
         });
 
@@ -84,9 +86,10 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -95,7 +98,7 @@ export async function DELETE(
         }
 
         await prisma.job.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ message: "Job deleted successfully" });

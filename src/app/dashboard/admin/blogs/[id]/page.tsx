@@ -13,11 +13,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-export default function EditBlogPostPage({ params }: { params: { id: string } }) {
+export default function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [id, setId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: "",
         slug: "",
@@ -31,13 +32,18 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
     });
 
     useEffect(() => {
-        fetchPost();
-    }, [params.id]);
+        async function init() {
+            const { id: paramId } = await params;
+            setId(paramId);
+            fetchPost(paramId);
+        }
+        init();
+    }, [params]);
 
-    const fetchPost = async () => {
+    const fetchPost = async (postId: string) => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/admin/blogs/${params.id}`);
+            const res = await fetch(`/api/admin/blogs/${postId}`);
             if (!res.ok) throw new Error("Failed to fetch post");
             const data = await res.json();
             setFormData({
@@ -74,7 +80,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
         const tagsArray = formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
 
         try {
-            const res = await fetch(`/api/admin/blogs/${params.id}`, {
+            const res = await fetch(`/api/admin/blogs/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

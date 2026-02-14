@@ -19,9 +19,10 @@ const blogPostUpdateSchema = z.object({
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -30,7 +31,7 @@ export async function GET(
         }
 
         const post = await prisma.blogPost.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 author: {
                     select: {
@@ -57,9 +58,10 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -72,7 +74,7 @@ export async function PUT(
 
         if (!validation.success) {
             return NextResponse.json(
-                { error: validation.error.errors },
+                { error: validation.error.format() },
                 { status: 400 }
             );
         }
@@ -85,7 +87,8 @@ export async function PUT(
                 where: { slug: data.slug },
             });
 
-            if (existingPost && existingPost.id !== params.id) {
+            // If a post with the new slug already exists and it's not the current post, return an error
+            if (existingPost && existingPost.id !== id) {
                 return NextResponse.json(
                     { error: "Slug already exists" },
                     { status: 409 }
@@ -94,7 +97,7 @@ export async function PUT(
         }
 
         const currentPost = await prisma.blogPost.findUnique({
-            where: { id: params.id }
+            where: { id }
         });
 
         let publishedAt = currentPost?.publishedAt;
@@ -103,7 +106,7 @@ export async function PUT(
         }
 
         const post = await prisma.blogPost.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 ...data,
                 publishedAt
@@ -122,9 +125,10 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // @ts-ignore
@@ -133,7 +137,7 @@ export async function DELETE(
         }
 
         await prisma.blogPost.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ message: "Post deleted successfully" });

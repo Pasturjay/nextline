@@ -7,15 +7,16 @@ import { ArrowLeft, Calendar, User, Share2 } from "lucide-react";
 import { notFound } from "next/navigation";
 
 interface Props {
-    params: { slug: string };
+    params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata(
     { params }: Props,
     parent: ResolvingMetadata
 ): Promise<Metadata> {
+    const { slug } = await params;
     const post = await prisma.blogPost.findUnique({
-        where: { slug: params.slug },
+        where: { slug },
     });
 
     if (!post) {
@@ -37,8 +38,9 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage({ params }: Props) {
+    const { slug } = await params;
     const post = await prisma.blogPost.findUnique({
-        where: { slug: params.slug },
+        where: { slug },
     });
 
     if (!post || post.status !== "PUBLISHED") {

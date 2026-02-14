@@ -5,9 +5,10 @@ import { prisma } from "@/lib/db";
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // Check admin authorization
@@ -15,7 +16,6 @@ export async function PATCH(
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        const { id } = params;
         const body = await req.json();
         const { role, suspended } = body;
 
@@ -74,9 +74,10 @@ export async function PATCH(
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         // Check admin authorization
@@ -84,7 +85,6 @@ export async function GET(
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        const { id } = params;
 
         // Fetch detailed user information
         const user = await prisma.user.findUnique({
