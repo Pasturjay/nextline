@@ -36,6 +36,8 @@ export async function POST(req: Request) {
                 firstName,
                 lastName,
                 passwordHash: hashedPassword,
+                accountType: 'INDIVIDUAL',
+                role: 'USER',
             },
         });
 
@@ -54,9 +56,12 @@ export async function POST(req: Request) {
             );
         }
 
-        console.error("Registration Error:", error);
+        console.error("Registration Error Details:", error);
         return NextResponse.json(
-            { message: "Something went wrong" },
+            {
+                message: "Something went wrong during registration",
+                error: process.env.NODE_ENV === "development" ? (error as any).message : undefined
+            },
             { status: 500 }
         );
     }
