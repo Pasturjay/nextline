@@ -1,0 +1,166 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "NexaLine Verification API",
+        "version": "1.0.0",
+        "description": "API for provisioning virtual numbers and sending SMS/OTP using the NexaLine Platform."
+    },
+    "servers": [
+        {
+            "url": "https://api.nexaline.com/v1",
+            "description": "Production Server"
+        },
+        {
+            "url": "http://localhost:3000/api/v1",
+            "description": "Local Development"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "APIKey"
+            }
+        },
+        "schemas": {
+            "Number": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "phoneNumber": {
+                        "type": "string"
+                    },
+                    "country": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SmsRequest": {
+                "type": "object",
+                "required": [
+                    "from",
+                    "to",
+                    "text"
+                ],
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "description": "The virtual number sending the SMS"
+                    },
+                    "to": {
+                        "type": "string",
+                        "description": "The destination number (E.164)"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "The message body"
+                    }
+                }
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "paths": {
+        "/verify/numbers": {
+            "get": {
+                "summary": "List Numbers",
+                "description": "Retrieve a list of allocated virtual numbers.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Number"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Buy Number",
+                "description": "Provision a new virtual number for verification.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "local",
+                                            "mobile",
+                                            "tollfree"
+                                        ],
+                                        "default": "local"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                },
+                "responses": {
+                    "201": {
+                        "description": "Number Provisioned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Number"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/verify/sms/send": {
+            "post": {
+                "summary": "Send SMS",
+                "description": "Send an SMS message from a provisioned virtual number.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SmsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message Queued"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,793 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Account Model
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String?   // null for OAuth users
+  firstName         String
+  lastName          String
+  accountType       AccountType @default(INDIVIDUAL)
+  emailVerified     DateTime?
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?   // encrypted
+  stripeCustomerId  String?   @unique
+  paypalEmail       String?
+  
+  // Metadata
+  createdAt         DateTime  @default(now())
+  lastLoginAt       DateTime?
+  timezone          String    @default("UTC")
+  currency          String    @default("USD")
+  locale            String    @default("en")
+  
+  // Webhook Config (for Pillar 2)
+  webhookUrl        String?
+  webhookSecret     String?
+
+  // Push Notifications (for Pillar 3 App)
+  pushToken         String?
+  
+  // Relations
+  numbers           VirtualNumber[]
+  apiKeys           ApiKey[]
+  subscriptions     Subscription[]
+  invoices          Invoice[]
+  supportTickets    SupportTicket[]
+  travelRentals     TravelRental[]
+  marketplaceBookings MarketplaceBooking[]
+  marketplaceReviews  MarketplaceReview[]
+  webhookDeliveries WebhookDelivery[]
+  tourProgress      UserTourProgress[]
+  blogPosts         BlogPost[]
+  
+  // Audit
+  deletedAt         DateTime? // soft delete
+  
+  // Role
+  role              Role      @default(USER)
+
+  @@index([email])
+  @@index([stripeCustomerId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPPORT
+  EDITOR
+  HR
+}
+
+enum AccountType {
+  INDIVIDUAL
+  BUSINESS
+  DEVELOPER
+  AGENCY
+}
+
+// Virtual Number Model
+model VirtualNumber {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  // Number Details
+  phoneNumber       String    @unique // E.164 format
+  country           String    // ISO 3166-1 alpha-2
+  areaCode          String?
+  numberType        NumberType
+  avoXINumberId     String    @unique // AVOXI's internal ID
+  
+  // Configuration
+  displayName       String?
+  forwardToNumber   String?   // E.164 format
+  forwardToSIP      String?   // SIP URI
+  voicemailEnabled  Boolean   @default(true)
+  voicemailGreeting String?   // S3 URL or TTS text
+  callRecording     Boolean   @default(false)
+  
+  // Business Hours (JSON)
+  businessHours     Json?     // {monday: {start: "09:00", end: "17:00"}, ...}
+  
+  // IVR Configuration (JSON)
+  ivrEnabled        Boolean   @default(false)
+  ivrMenu           Json?     // IVR tree structure
+  
+  // Billing
+  pillar            Pillar
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  monthlyPrice      Decimal
+  avoXIWholesaleCost Decimal
+  
+  // Status
+  status            NumberStatus @default(ACTIVE)
+  activatedAt       DateTime  @default(now())
+  expiresAt         DateTime? // for temporary rentals
+  suspendedAt       DateTime?
+  suspensionReason  String?
+  autoRenew         Boolean   @default(true)
+  
+  // Marketplace (Pillar 4)
+  reputationScore   Float?    @default(5.0) // 1-5 scale
+  totalCalls        Int       @default(0)
+  answeredCalls     Int       @default(0)
+  spamReports       Int       @default(0)
+  
+  // Relations
+  callLogs          CallLog[]
+  smsLogs           SmsLog[]
+  spamReportLogs    SpamReport[]
+  marketplaceListing MarketplaceListing?
+
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  
+  @@index([userId])
+  @@index([phoneNumber])
+  @@index([status])
+  @@index([country, numberType])
+}
+
+enum NumberType {
+  LOCAL
+  TOLL_FREE
+  MOBILE
+  VANITY
+  DID
+  ITFS
+}
+
+enum Pillar {
+  RESELLER      // Pillar 1
+  OTP_VERIFY    // Pillar 2
+  TRAVEL        // Pillar 3
+  MARKETPLACE   // Pillar 4
+}
+
+enum NumberStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_ACTIVATION
+  FAILED_ACTIVATION
+  EXPIRED
+  CANCELLED
+}
+
+// Subscription Model
+model Subscription {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  // Stripe Integration
+  stripeSubscriptionId String? @unique
+  stripePriceId     String?
+  
+  // Subscription Details
+  planType          PlanType
+  pillar            Pillar
+  billingInterval   BillingInterval
+  amount            Decimal
+
+  currency          String    @default("USD")
+  
+  // Status
+  status            SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd  DateTime
+  cancelledAt       DateTime?
+  cancelAtPeriodEnd Boolean   @default(false)
+  
+  // Relations
+  numbers           VirtualNumber[]
+  invoices          Invoice[]
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+enum PlanType {
+  // Pillar 1
+  BASIC_NUMBER
+  PREMIUM_NUMBER
+  ENTERPRISE_NUMBER
+  
+  // Pillar 2
+  OTP_STARTER
+  OTP_GROWTH
+  OTP_ENTERPRISE
+  
+  // Pillar 3
+  TRAVEL_WEEKLY
+  TRAVEL_BIWEEKLY
+  TRAVEL_MONTHLY
+  
+  // Pillar 4
+  MARKETPLACE_RENTAL
+}
+
+enum BillingInterval {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  INCOMPLETE
+  TRIALING
+}
+
+// API Key Model (Pillar 2)
+model ApiKey {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  name              String    // User-defined key name
+  keyHash           String    @unique // bcrypt hashed
+  keyPrefix         String    // First 8 chars for identification
+  
+  environment       Environment @default(TEST)
+  
+  // Permissions
+  scopes            String[]  // ["sms:send", "numbers:read", etc.]
+  
+  // Rate Limiting
+  rateLimit         Int       @default(100) // requests per minute
+  
+  // Status
+  status            ApiKeyStatus @default(ACTIVE)
+  lastUsedAt        DateTime?
+  expiresAt         DateTime? // null = no expiry
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  revokedAt         DateTime?
+  
+  @@index([userId])
+  @@index([keyHash])
+}
+
+enum Environment {
+  TEST
+  LIVE
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+// Call Log Model
+model CallLog {
+  id                String    @id @default(uuid())
+  numberId          String
+  number            VirtualNumber @relation(fields: [numberId], references: [id])
+  
+  // Call Details
+  direction         CallDirection
+  fromNumber        String    // E.164
+  toNumber          String    // E.164
+  duration          Int       // seconds
+  
+  // Status & Outcome
+  status            CallStatus
+  disposition       CallDisposition
+  
+  // Recording
+  recordingUrl      String?   // S3 URL
+  recordingDuration Int?      // seconds
+  
+  // Carrier Data
+  avoXICallId       String?   @unique
+  carrierCost       Decimal?
+
+  
+  // Timestamps
+  startedAt         DateTime  @default(now())
+  answeredAt        DateTime?
+  endedAt           DateTime?
+  
+  createdAt         DateTime  @default(now())
+  
+  @@index([numberId])
+  @@index([startedAt])
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  BUSY
+  NO_ANSWER
+}
+
+enum CallDisposition {
+  ANSWERED
+  VOICEMAIL
+  MISSED
+  BUSY
+  FAILED
+  BLOCKED
+}
+
+// SMS Log Model (Pillar 2)
+model SmsLog {
+  id                String    @id @default(uuid())
+  numberId          String
+  number            VirtualNumber @relation(fields: [numberId], references: [id])
+  
+  // Message Details
+  direction         SmsDirection
+  fromNumber        String    // E.164
+  toNumber          String    // E.164
+  body              String
+
+  
+  // Status
+  status            SmsStatus
+  deliveredAt       DateTime?
+  
+  // Webhook Delivery (for API clients)
+  webhookUrl        String?
+  webhookDelivered  Boolean   @default(false)
+  webhookAttempts   Int       @default(0)
+  webhookLastAttempt DateTime?
+  
+  // Carrier Data
+  avoXIMessageId    String?   @unique
+  carrierCost       Decimal?
+
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  
+  @@index([numberId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum SmsDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  UNDELIVERED
+}
+
+// Invoice Model
+model Invoice {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  
+  // Stripe Integration
+  stripeInvoiceId   String?   @unique
+  
+  // Invoice Details
+  invoiceNumber     String    @unique // AUTO_INCREMENT or UUID-based
+  amount            Decimal
+
+  currency          String    @default("USD")
+  tax               Decimal?
+  totalAmount       Decimal
+  
+  // Line Items (JSON)
+  lineItems         Json      // [{description, quantity, unitPrice, amount}]
+  
+  // Status
+  status            InvoiceStatus
+  paidAt            DateTime?
+  dueAt             DateTime
+  
+  // PDF
+  pdfUrl            String?   // S3 URL
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+// Support Ticket Model
+model SupportTicket {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  subject           String
+  description       String
+
+  priority          Priority  @default(MEDIUM)
+  status            TicketStatus @default(OPEN)
+  
+  // Assignment
+  assignedTo        String?   // Internal staff user ID
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  resolvedAt        DateTime?
+  closedAt          DateTime?
+  
+  @@index([userId])
+  @@index([status])
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_USER
+  RESOLVED
+  CLOSED
+}
+
+// Webhook Delivery Log (Pillar 2)
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  event       String
+  url         String
+  payloadId   String
+  statusCode  Int
+  attempt     Int      @default(1)
+  failed      Boolean  @default(false)
+  
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Travel Rental Model (Pillar 3)
+model TravelRental {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  phoneNumber String
+  country     String
+  duration    String   // '7d', '14d', '30d'
+  
+  forwardToNumber String
+  
+  price       Decimal
+
+  status      TravelRentalStatus @default(PENDING)
+  failureReason String?
+  
+  expiresAt   DateTime
+  activatedAt DateTime?
+  
+  numberId    String?
+  // Note: We might link to VirtualNumber if we want to treat it as a proper number
+  // but spec implies it might be simpler. Let's link it optional.
+  // virtualNumber VirtualNumber? @relation(fields: [numberId], references: [id])
+  
+  paymentIntentId String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+enum TravelRentalStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  FAILED
+}
+
+// Marketplace Listing (Pillar 4)
+model MarketplaceListing {
+  id                String   @id @default(uuid())
+  
+  // Number Details
+  numberId          String   @unique
+  number            VirtualNumber @relation(fields: [numberId], references: [id])
+  
+  // Listing Details
+  isAvailable       Boolean  @default(true)
+  minRentalDays     Int      @default(7)
+  maxRentalDays     Int      @default(365)
+  
+  // Pricing (per-day rates)
+  pricePerDay       Decimal
+
+  weeklyDiscount    Float?   // Percentage discount for 7+ days
+  monthlyDiscount   Float?   // Percentage discount for 30+ days
+  
+  // Reputation Metrics
+  reputationScore   Float    @default(5.0) // 1-5 scale
+  totalBookings     Int      @default(0)
+  completedBookings Int      @default(0)
+  averageRating     Decimal?
+
+  
+  // Marketplace Features
+  isFeatured        Boolean  @default(false)
+  featuredUntil     DateTime?
+  
+  // Metadata
+  listingTitle      String?
+  listingDescription String?
+
+  
+  // Relations
+  bookings          MarketplaceBooking[]
+  reviews           MarketplaceReview[]
+  
+  // Audit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([isAvailable, reputationScore])
+  @@index([isFeatured, featuredUntil])
+}
+
+model MarketplaceBooking {
+  id                String   @id @default(uuid())
+  
+  // Listing Reference
+  listingId         String
+  listing           MarketplaceListing @relation(fields: [listingId], references: [id])
+  
+  // Renter Details
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Booking Details
+  startDate         DateTime
+  endDate           DateTime
+  totalDays         Int
+  
+  // Pricing
+  pricePerDay       Decimal
+
+  totalPrice        Decimal
+  discount          Decimal?
+  finalPrice        Decimal
+  
+  // Configuration
+  forwardToNumber   String?
+  forwardToSIP      String?
+  voicemailEnabled  Boolean  @default(true)
+  
+  // Status
+  status            BookingStatus @default(PENDING)
+  
+  // Payment
+  stripePaymentId   String?
+  paidAt            DateTime?
+  
+  // Campaign Details
+  campaignName      String?
+  campaignGoal      String?
+  
+  // Cancellation
+  cancelledAt       DateTime?
+  cancellationReason String?
+  refundAmount      Decimal?
+
+  
+  // Analytics at booking level
+  totalCalls        Int      @default(0)
+  answeredCalls     Int      @default(0)
+  totalSMS          Int      @default(0)
+  
+  // Review
+  review            MarketplaceReview?
+  
+  // Audit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([listingId, startDate, endDate])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+model MarketplaceReview {
+  id                String   @id @default(uuid())
+  
+  // Booking Reference
+  bookingId         String   @unique
+  booking           MarketplaceBooking @relation(fields: [bookingId], references: [id])
+  
+  // Listing Reference
+  listingId         String
+  listing           MarketplaceListing @relation(fields: [listingId], references: [id])
+  
+  // Reviewer
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Review Content
+  rating            Int      // 1-5 stars
+  title             String?
+  comment           String?
+
+  
+  // Specific Ratings
+  callQualityRating Int?     // 1-5
+  reliabilityRating Int?     // 1-5
+  valueRating       Int?     // 1-5
+  
+  // Flags
+  isVerified        Boolean  @default(true) // Only from actual bookings
+  isFlagged         Boolean  @default(false)
+  flagReason        String?
+  
+  // Response from listing owner
+  ownerResponse     String?
+
+  ownerRespondedAt  DateTime?
+  
+  // Audit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([listingId, rating])
+  @@index([userId])
+}
+
+// Spam Report for Reputation System
+model SpamReport {
+  id          String   @id @default(uuid())
+  numberId    String
+  number      VirtualNumber @relation(fields: [numberId], references: [id])
+  
+  reporter    String?   // Could be anonymous or user ID
+  reason      String?
+  
+  createdAt   DateTime @default(now())
+  @@index([numberId])
+}
+
+// User Tour Progress (for guided tours)
+model UserTourProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tourId    String   // e.g., "dashboard", "buy-number", "developer"
+  completed Boolean  @default(false)
+  skipped   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tourId])
+  @@index([userId])
+}
+
+// Job Posting Model
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  department  String
+  location    String
+  type        JobType
+  description String   // Markdown/Rich Text
+  requirements String  // Markdown/Rich Text
+  postedAt    DateTime @default(now())
+  closesAt    DateTime?
+  status      JobStatus @default(OPEN)
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@index([status])
+  @@index([department])
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+// Blog Post Model
+model BlogPost {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  content     String   // Markdown/Rich Text
+  coverImage  String?  // S3 URL
+  
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  publishedAt DateTime?
+  status      BlogStatus @default(DRAFT)
+  tags        String[]
+  
+  // SEO
+  seoTitle        String?
+  seoDescription  String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([status])
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}

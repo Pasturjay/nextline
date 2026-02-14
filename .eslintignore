@@ -1,0 +1,3 @@
+scripts/
+build-error*.log
+lint-error.log
