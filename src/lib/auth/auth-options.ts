@@ -16,13 +16,17 @@ export const authOptions: NextAuthOptions = {
         error: "/auth/error",
     },
     providers: [
-        ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+        ...(process.env.GOOGLE_CLIENT_ID &&
+            process.env.GOOGLE_CLIENT_SECRET &&
+            !process.env.GOOGLE_CLIENT_ID.includes("placeholder") ? [
             GoogleProvider({
                 clientId: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             })
         ] : []),
-        ...(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET ? [
+        ...(process.env.MICROSOFT_CLIENT_ID &&
+            process.env.MICROSOFT_CLIENT_SECRET &&
+            !process.env.MICROSOFT_CLIENT_ID.includes("placeholder") ? [
             AzureADProvider({
                 clientId: process.env.MICROSOFT_CLIENT_ID,
                 clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
@@ -92,7 +96,7 @@ export const authOptions: NextAuthOptions = {
             }
         })
     ],
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || "nexaline-development-secret-key-12345",
     debug: process.env.NODE_ENV === "development",
     callbacks: {
         async jwt({ token, user, account }) {
