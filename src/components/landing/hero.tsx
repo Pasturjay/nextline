@@ -8,7 +8,7 @@ import { FloatingIcons } from "@/components/landing/floating-icons";
 
 export function LandingHero() {
     return (
-        <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 pt-20 pb-12 md:pb-16">
+        <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 pt-16 pb-12 md:pb-16">
             {/* Animated Background Pattern */}
             <div className="absolute inset-0 opacity-20">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.1),transparent_50%)]" />
@@ -33,7 +33,7 @@ export function LandingHero() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                     {/* Left Content */}
-                    <div className="text-white space-y-5 lg:space-y-6">
+                    <div className="text-white space-y-4">
                         {/* Badge */}
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30">
                             <span className="relative flex h-2 w-2">
@@ -44,7 +44,7 @@ export function LandingHero() {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-extrabold leading-tight">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-extrabold leading-tight">
                             One Platform for
                             <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-pink-200 to-white">
@@ -53,13 +53,13 @@ export function LandingHero() {
                         </h1>
 
                         {/* Subheading */}
-                        <p className="text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed max-w-xl">
+                        <p className="text-base md:text-lg lg:text-xl text-white/90 leading-relaxed max-w-xl">
                             Virtual numbers, instant SMS verification, and travel eSIMs—all in one place.
                             Stay connected anywhere, anytime.
                         </p>
 
                         {/* Discount Highlight */}
-                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 lg:p-6 inline-block">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 lg:p-5 inline-block">
                             <div className="flex items-baseline gap-3">
                                 <span className="text-4xl lg:text-5xl font-black text-yellow-300">35%</span>
                                 <div>
@@ -103,7 +103,7 @@ export function LandingHero() {
 
                     {/* Right Visual - Service Cards */}
                     <div className="relative mt-8 lg:mt-0">
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {/* Virtual Numbers Card */}
                             <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform">
                                 <div className="flex items-start gap-4">
@@ -122,7 +122,7 @@ export function LandingHero() {
                             </div>
 
                             {/* SMS OTP Card */}
-                            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform lg:ml-8">
+                            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl transform hover:scale-105 transition-transform lg:ml-8">
                                 <div className="flex items-start gap-4">
                                     <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl">
                                         <MessageSquare className="h-6 w-6 text-white" />
