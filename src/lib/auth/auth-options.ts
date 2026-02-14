@@ -16,15 +16,19 @@ export const authOptions: NextAuthOptions = {
         error: "/auth/error",
     },
     providers: [
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID || "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        }),
-        AzureADProvider({
-            clientId: process.env.MICROSOFT_CLIENT_ID || "",
-            clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
-            tenantId: process.env.MICROSOFT_TENANT_ID,
-        }),
+        ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+            GoogleProvider({
+                clientId: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            })
+        ] : []),
+        ...(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET ? [
+            AzureADProvider({
+                clientId: process.env.MICROSOFT_CLIENT_ID,
+                clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+                tenantId: process.env.MICROSOFT_TENANT_ID,
+            })
+        ] : []),
         CredentialsProvider({
             name: "Credentials",
             credentials: {
@@ -88,6 +92,8 @@ export const authOptions: NextAuthOptions = {
             }
         })
     ],
+    secret: process.env.NEXTAUTH_SECRET,
+    debug: process.env.NODE_ENV === "development",
     callbacks: {
         async jwt({ token, user, account }) {
             if (user) {
