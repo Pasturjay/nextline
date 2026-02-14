@@ -56,8 +56,7 @@ export default function ContactPage() {
                                 <MapPin className="h-6 w-6 text-primary mt-1" />
                                 <div>
                                     <h3 className="font-semibold text-foreground">Office</h3>
-                                    <p className="text-muted-foreground">123 Tech Plaza, Suite 400</p>
-                                    <p className="text-muted-foreground">San Francisco, CA 94107</p>
+                                    <p className="text-muted-foreground">[Your Company Address]</p>
                                 </div>
                             </div>
                         </div>
