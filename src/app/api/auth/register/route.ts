@@ -56,11 +56,20 @@ export async function POST(req: Request) {
             );
         }
 
-        console.error("Registration Error Details:", error);
+        // Extensive logging for debugging
+        console.error("=== REGISTRATION ERROR START ===");
+        console.error("Error Name:", (error as any)?.name);
+        console.error("Error Message:", (error as any)?.message);
+        console.error("Error Stack:", (error as any)?.stack);
+        if ((error as any)?.code) console.error("Prisma Error Code:", (error as any)?.code);
+        if ((error as any)?.meta) console.error("Prisma Error Meta:", JSON.stringify((error as any).meta));
+        console.error("=== REGISTRATION ERROR END ===");
+
         return NextResponse.json(
             {
                 message: "Something went wrong during registration",
-                error: process.env.NODE_ENV === "development" ? (error as any).message : undefined
+                error: (error as any).message,
+                code: (error as any).code
             },
             { status: 500 }
         );

@@ -132,9 +132,15 @@ function LoginContent() {
                                 />
                             </div>
                             <div className="grid gap-1">
-                                <Label className="sr-only" htmlFor="password">
-                                    Password
-                                </Label>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Link
+                                        href="/auth/forgot-password"
+                                        className="text-sm font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
+                                    >
+                                        Forgot password?
+                                    </Link>
+                                </div>
                                 <Input
                                     id="password"
                                     placeholder="Password"
