@@ -15,12 +15,13 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         const { token, email, password } = resetPasswordSchema.parse(body);
+        const normalizedEmail = email.toLowerCase();
 
         // Verify token
         const resetToken = await prisma.passwordResetToken.findUnique({
             where: {
                 token,
-                email,
+                email: normalizedEmail,
             },
         });
 

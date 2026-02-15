@@ -13,9 +13,10 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         const { email } = forgotPasswordSchema.parse(body);
+        const normalizedEmail = email.toLowerCase();
 
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: { email: normalizedEmail },
         });
 
         if (!user) {
@@ -32,21 +33,21 @@ export async function POST(req: Request) {
 
         // Upsert token (if one already exists for this email, replace it)
         await prisma.passwordResetToken.upsert({
-            where: { email_token: { email, token } }, // Actually, we should probably delete old ones first or just create new
+            where: { email_token: { email: normalizedEmail, token } },
             update: {
                 token,
                 expires,
             },
             create: {
-                email,
+                email: normalizedEmail,
                 token,
                 expires,
             },
         });
 
         // In a real app, send email here. For now, log to console.
-        const resetLink = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}&email=${email}`;
-        console.log(`[PASSWORD RESET] Email: ${email}, Link: ${resetLink}`);
+        const resetLink = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}&email=${normalizedEmail}`;
+        console.log(`[PASSWORD RESET] Email: ${normalizedEmail}, Link: ${resetLink}`);
 
         return NextResponse.json(
             { message: "If an account exists with this email, a reset link has been sent." },
